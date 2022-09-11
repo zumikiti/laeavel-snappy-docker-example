@@ -16,3 +16,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/pdf', function () {
+    return PDF::loadView('hello')
+        ->setOption('encoding', 'utf-8')
+        ->inline();
+});
