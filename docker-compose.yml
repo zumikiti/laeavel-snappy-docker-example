@@ -1,0 +1,46 @@
+version: '3'
+services:
+  app:
+    build: ./docker/app
+    ports:
+      - '8080:80'
+    environment:
+      PHP_EXTENSIONS: bcmath gd intl pdo_pgsql pgsql pdo_sqlite
+      PHP_EXTENSION_SQLITE3: 1
+      PHP_INI_MEMORY_LIMIT: 512M
+      PHP_INI_DATE__TIMEZONE: Asia/Tokyo
+      PHP_INI_MBSTRING__LANGUAGE: Japanese
+      APACHE_DOCUMENT_ROOT: /var/www/html/public
+    volumes:
+      - '.:/var/www/html'
+    networks:
+      - snappy
+    depends_on:
+      - pgsql
+  pgsql:
+    image: 'postgres:13'
+    ports:
+      - '${FORWARD_DB_PORT:-5432}:5432' # ポートフォワーディング用の設定
+    environment:
+      PGPASSWORD: '${DB_PASSWORD:-secret}'
+      POSTGRES_DB: '${DB_DATABASE}'
+      POSTGRES_USER: '${DB_USERNAME}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    volumes:
+      - 'snappypgsql:/var/lib/postgresql/data'
+      - '.:/larave-snappy'
+    networks:
+      - snappy
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "${DB_DATABASE}", "-U", "${DB_USERNAME}"]
+      retries: 3
+      timeout: 5s
+
+networks:
+  snappy:
+    driver: bridge
+
+volumes:
+  snappypgsql:
+    driver: local
